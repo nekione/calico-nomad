@@ -12,6 +12,8 @@ Calico can be used as a CNI plugin for Nomad. This guide will walk you through t
 
 **Follow the full [guide here.](docs/main.md)**
 
+**For Automated Setup Follow: [this guide](https://github.com/nekione/calico-nomad/blob/main/docs/main.md#automated-installation)**
+
 ![Calico-Nomad](assets/hashicorp-nomad-cni.png)
 
 
