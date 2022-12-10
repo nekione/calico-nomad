@@ -1,0 +1,11 @@
+[nodes]
+172.16.6.10
+172.16.6.11
+
+
+# only one master is allowed
+[master]
+172.16.6.10
+
+[workers]
+172.16.6.11
