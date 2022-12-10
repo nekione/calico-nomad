@@ -23,6 +23,8 @@ Wireguard is a fast, modern, secure VPN tunnel. Wireguard is a layer 3 tunnel th
 
 We want to create a secure network between two hosts using Wireguard. We want to run a Nomad job on one of the hosts and access it from the other host. We want to use Calico as a CNI plugin for Nomad.
 
+![](assets/netmaker.png)
+
 ### what we have achieved?
 
 We are able to run a Nomad job on one of the hosts and access it from the other host in the same network. We are able to use Calico as a CNI plugin for Nomad.
