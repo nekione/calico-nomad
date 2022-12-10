@@ -1,0 +1,8 @@
+apiVersion: projectcalico.org/v3
+kind: CalicoAPIConfig
+metadata:
+spec:
+  etcdEndpoints: {% for etcd_host in groups['nodes'] %}{% if loop.index != 1 %},{% endif %}https://{{etcd_host}}:2379{% endfor %} 
+  etcdKeyFile: /etc/etcd/pki/etcd-key.pem
+  etcdCertFile: /etc/etcd/pki/etcd.pem
+  etcdCACertFile: /etc/etcd/pki/ca.pem

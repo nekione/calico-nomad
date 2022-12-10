@@ -1,0 +1,15 @@
+{
+    "name": "testnet",
+    "cniVersion": "0.3.1",
+    "plugins": [
+      {
+        "type": "calico",
+        "log_level": "info",
+        "datastore_type": "etcdv3",
+        "mtu": 1500,
+        "ipam": {
+            "type": "calico-ipam"
+        }
+      }
+    ]
+  }

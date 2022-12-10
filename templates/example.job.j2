@@ -1,0 +1,31 @@
+job "netshoot-1" {
+    datacenters = ["dc1"]
+    group "netshoot-group" {
+        reschedule {
+            attempts = 1
+            interval       = "1h"
+            delay = "10s"
+            unlimited      = false
+        }
+
+        task "netshoot-task-1" {
+            driver = "containerd-driver"
+            config {
+                image = "nicolaka/netshoot"
+                command = "sh"
+                args = ["-c", "while true; do echo 'hello'; sleep 5; done"]
+            }
+            resources {
+                cpu = 500
+                memory = 256
+            }
+        }
+
+        network {
+            mode = "cni/testnet"
+                port "http" {
+                        to = 8080
+                }
+        }
+    }
+}

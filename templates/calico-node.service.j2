@@ -1,0 +1,18 @@
+[Unit]
+Description=calico-node
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+EnvironmentFile=/etc/calico/calico.env
+ExecStartPre=-/usr/local/bin/nerdctl rm -f calico-node
+ExecStart=/usr/bin/bash /usr/local/bin/calicoup.sh
+
+ExecStop=-/usr/local/bin/nerdctl stop calico-node
+
+Restart=on-failure
+StartLimitBurst=0
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
