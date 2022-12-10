@@ -1,14 +1,8 @@
-# calico-nomad
-
+# Index
 Author: [Aman Singh](https://github.com/amansinghtech)
 
-> Calico is a CNI plugin that can be coupled with containerd which can scale up very easily across nodes. Calico is used by kubernetes to provide networking layer for pods. This documentation will help you setup Calico without kubernetes using etcd and containerd.
-
-
-# Index
-
-- [calico-nomad](#calico-nomad)
 - [Index](#index)
+- [calico-nomad](#calico-nomad)
   - [Steps to setup](#steps-to-setup)
     - [Step 1: Setup Nodes](#step-1-setup-nodes)
     - [Step 2: Install containerd and runc on both Nodes](#step-2-install-containerd-and-runc-on-both-nodes)
@@ -22,7 +16,12 @@ Author: [Aman Singh](https://github.com/amansinghtech)
     - [Step 2: install Containerd Driver](#step-2-install-containerd-driver)
     - [Step 3: Run Sample test](#step-3-run-sample-test)
     - [Step 4: Lauch Container with Calico CNI](#step-4-lauch-container-with-calico-cni)
+- [Automated Installation](#automated-installation)
+  - [Run Nomad Job](#run-nomad-job)
 
+
+# calico-nomad
+> Calico is a CNI plugin that can be coupled with containerd which can scale up very easily across nodes. Calico is used by kubernetes to provide networking layer for pods. This documentation will help you setup Calico without kubernetes using etcd and containerd.
 
 ## Steps to setup 
 
@@ -58,6 +57,8 @@ install basic tools:
 ```bash
 apt update && apt install vim net-tools curl wget -y
 ```
+
+> **Skip to [Automated Installation](#automated-installation) if you want to run ansible playbook to setup the cluster.**
 
 ### Step 2: Install containerd and runc on both Nodes
 
@@ -759,4 +760,29 @@ job "netshoot-1" {
         }
     }
 }
+```
+# Automated Installation
+
+> clone this repository and run these commands
+
+create virtual environment
+```bash
+python3 -m virtualenv venv
+source venv/bin/activate
+```
+
+install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+run the playbook
+```bash
+ansible-playbook -i hosts setup.yml
+```
+
+## Run Nomad Job
+
+```bash
+nomad job run example.nomad
 ```
