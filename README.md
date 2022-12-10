@@ -1,6 +1,6 @@
 # calico-nomad
 
-Author: [Aman Singh](@Amansinghtech)
+Author: [Aman Singh](https://github.com/amansinghtech)
 
 > Calico is a CNI plugin that can be coupled with containerd which can scale up very easily across nodes. Calico is used by kubernetes to provide networking layer for pods. This documentation will help you setup Calico without kubernetes using etcd and containerd.
 
