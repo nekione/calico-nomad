@@ -14,6 +14,11 @@ jobs:
     steps:
       - name: check Ansible
         run: ansible --version
+      - uses: actions/checkout@v2
+      - name: Run ansible-lint
+        uses: ansible-community/ansible-lint-action@v6.8.2
+        with:
+          path: "setup.yml"
 
   release:
     name: Release
