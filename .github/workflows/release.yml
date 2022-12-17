@@ -33,6 +33,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '18'
+      - name: add semantic release dependencies
+        run: npm install -G "@semantic-release/changelog"
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
