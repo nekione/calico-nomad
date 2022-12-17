@@ -14,7 +14,9 @@ jobs:
     steps:
       - name: check Ansible
         run: ansible --version
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: test
+        run: "pwd ; ls -lht"
       - name: Run ansible-lint
         uses: ansible-community/ansible-lint-action@v6.8.2
         with:
