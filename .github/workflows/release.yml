@@ -15,12 +15,10 @@ jobs:
       - name: check Ansible
         run: ansible --version
       - uses: actions/checkout@v3
-      - name: test
-        run: "pwd ; ls -lht"
       - name: Run ansible-lint
         uses: ansible-community/ansible-lint-action@v6.8.2
         with:
-          path: "${GITHUB_WORKSPACE}/setup.yml"
+          path: "setup.yaml"
 
   release:
     name: Release
