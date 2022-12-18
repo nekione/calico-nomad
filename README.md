@@ -1,10 +1,12 @@
 # Calico-Nomad
+
 Author: [Aman Singh](https://github.com/amansinghtech)
 
-Reference: https://www.hashicorp.com/blog/multi-interface-networking-and-cni-plugins-in-nomad-0-12
+Reference: <https://www.hashicorp.com/blog/multi-interface-networking-and-cni-plugins-in-nomad-0-12>
 
 ## Overview
-Nomad supports multi-interface networking and CNI plugins. This allows you to configure multiple network interfaces for a task. Calico is a CNI plugin that provides networking and network policy for containers, virtual machines, and native host-based workloads. 
+
+Nomad supports multi-interface networking and CNI plugins. This allows you to configure multiple network interfaces for a task. Calico is a CNI plugin that provides networking and network policy for containers, virtual machines, and native host-based workloads.
 
 This write-up is written to demonstrate how to use Calico as a CNI plugin for Nomad as an answer to this [problem statement](https://github.com/hashicorp/nomad/issues/11748).
 
@@ -12,10 +14,9 @@ Calico can be used as a CNI plugin for Nomad. This guide will walk you through t
 
 **Follow the full [guide here.](docs/main.md)**
 
-**For Automated Setup Follow: [this guide](https://github.com/nekione/calico-nomad/blob/main/docs/main.md#automated-installation)**
+**For Automated Setup Follow: [this guide](docs/main.md#automated-installation)**
 
 ![Calico-Nomad](assets/hashicorp-nomad-cni.png)
-
 
 ## Calico-Nomad over Wireguard VPN
 
@@ -33,8 +34,8 @@ We are able to run a Nomad job on one of the hosts and access it from the other 
 
 ### where we are stuck?
 
-When we try to access the Nomad job from the other host via the Wireguard tunnel, we are not able to access it. although we are able to ping the host from the other host. containers within the same host are able to access each other. 
+When we try to access the Nomad job from the other host via the Wireguard tunnel, we are not able to access it. although we are able to ping the host from the other host. containers within the same host are able to access each other.
 
 For wireguard, we are using netmaker. refer to this [guide](https://github.com/gravitl/netmaker)
 
-I assume that the problem is with the calico configuration. I am not sure how to configure calico to work with vpn interface. 
+I assume that the problem is with the calico configuration. I am not sure how to configure calico to work with vpn interface.
