@@ -8,6 +8,9 @@ mkdir -p /var/lib/calico
 -e ETCD_CERT_FILE=/etc/calico/certs/cert.crt \
 -e NODENAME={{ansible_hostname}} \
 -e CALICO_NETWORKING_BACKEND=bird \
+-e FELIX_VXLANENABLED=true \
+-e IP_AUTODETECTION_METHOD=interface=nm-netmaker \
+-e CALICO_MANAGE_CNI=false \
 -e ETCD_ENDPOINTS={% for etcd_host in groups['nodes'] %}{% if loop.index != 1 %},{% endif %}https://{{etcd_host}}:2379{% endfor %} \
 -v /var/log/calico:/var/log/calico \
 -v /var/run/calico:/var/run/calico \
