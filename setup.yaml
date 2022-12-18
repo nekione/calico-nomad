@@ -1,3 +1,4 @@
+---
 - name: Install basic tools
   hosts: nodes
   vars:
@@ -16,27 +17,29 @@
           - wget
         state: present
     - name: Ensure containerd binary
-      unarchive:
+      ansible.builtin.unarchive:
         src: "{{ containerd_url }}"
         dest: /usr/local
         creates: /usr/local/bin/containerd
         validate_certs: true
-        decrypt: True # not required. This option controls the autodecryption of source files using vault.
         owner: root
         group: root
 
-    - name: creating directory if not exists
+    - name: Ensure systemd directory
       ansible.builtin.file:
         path: /usr/local/lib/systemd/system/
         recurse: true
         state: directory
 
-    - name: create containerd service
+    - name: Template containerd service unit
       ansible.builtin.template:
+        owner: root
+        group: root
+        mode: 0644
         src: containerd.service.j2
         dest: /usr/local/lib/systemd/system/containerd.service
 
-    - name: start containerd service
+    - name: Start containerd service
       ansible.builtin.service:
         name: containerd
         state: started
@@ -56,8 +59,8 @@
         state: directory
         recurse: true
 
-    - name: downloading cni plugins
-      unarchive:
+    - name: Download cni plugins
+      ansible.builtin.unarchive:
         src: "{{ cni_plugins_url }}"
         dest: /opt/cni/bin
         validate_certs: true
@@ -66,12 +69,11 @@
         group: root
 
     - name: Ensure nerdctl
-      unarchive:
+      ansible.builtin.unarchive:
         src: "{{ nerdctl_url }}"
         dest: /usr/local/bin
         creates: /usr/local/bin/nerdctl
         validate_certs: true
-        decrypt: True # not required. This option controls the autodecryption of source files using vault.
         mode: 0700
         owner: root
         group: root
@@ -80,6 +82,9 @@
       ansible.builtin.template:
         src: mynet.conf.j2
         dest: /etc/cni/net.d/10-mynet.conf
+        owner: root
+        group: root
+        mode: 0644
 
 - name: Generate tls certs
   hosts: master
@@ -91,7 +96,7 @@
     cfssl_json_url: https://storage.googleapis.com/kubernetes-the-hard-way/cfssl/1.4.1/linux/cfssljson
   tasks:
     - name: Ensure TLS tools
-      get_url:
+      ansible.builtin.get_url:
         url: "{{ item }}"
         dest: /usr/local/bin/
         validate_certs: true
@@ -106,39 +111,49 @@
         state: directory
         recurse: true
 
-    - name: creating ca-config.json
+    - name: Template ca-config.json
       ansible.builtin.template:
-        src: ca-config.json.j2
-        dest: /certs/ca-config.json
-      register: ca_config
-
-    - name: creating ca-csr.json
-      ansible.builtin.template:
-        src: ca-csr.json.j2
-        dest: /certs/ca-csr.json
+        src: "{{ item }}.j2"
+        dest: /certs/{{ item }}
+        mode: 0644
+        owner: root
+        group: root
+      loop:
+        - ca-config.json
+        - ca-csr.json
       notify: generate CA certificates
 
-    - name: creating etcd-csr.json
+    - name: Template etcd-csr.json
       ansible.builtin.template:
         src: etcd-csr.json.j2
         dest: /certs/etcd-csr.json
+        mode: 0644
+        user: root
+        group: root
       notify: generate tls certificate
 
-    - name: fetch tls certificates from remote to local
+    - name: Fetch tls certificates
       ansible.builtin.fetch:
-        src: "/certs/{{ item }}"
-        dest: "."
+        src: /certs/{{ item }}
+        dest: .
       loop:
         - etcd.pem
         - ca.pem
         - etcd-key.pem
   handlers:
-    - name: generate CA certificates
-      shell: "cfssl gencert -initca /certs/ca-csr.json | cfssljson -bare /certs/ca"
-      when: csr.changed
-    - name: generate tls certificate
-      shell: "cfssl gencert -ca=/certs/ca.pem -ca-key=/certs/ca-key.pem -config=/certs/ca-config.json -profile=etcd /certs/etcd-csr.json | cfssljson -bare /certs/etcd"
-      when: etcd_csr.changed
+    - name: Generate CA certificates
+      ansible.builtin.shell: |
+        cfssl gencert -initca /certs/ca-csr.json \
+        | cfssljson -bare /certs/ca
+
+    - name: Generate tls certificate
+      ansible.builtin.shell: |
+        cfssl gencert -ca=/certs/ca.pem \
+                      -ca-key=/certs/ca-key.pem \
+                      -config=/certs/ca-config.json \
+                      -profile=etcd \
+                      /certs/etcd-csr.json \
+                      | cfssljson -bare /certs/etcd
 
 - name: Installing etcd
   hosts: nodes
@@ -146,40 +161,41 @@
     etcd_url: https://github.com/etcd-io/etcd/releases/download/v3.5.5/etcd-v3.5.5-linux-amd64.tar.gz
     etcd_version: 3.5.5
   tasks:
-    - name: create pki directory
+    - name: Ensure pki directory
       ansible.builtin.file:
         path: /etc/etcd/pki
         state: directory
         recurse: true
-    - name: copy certificate to all nodes
+    - name: Copy certificate to nodes
       ansible.builtin.copy:
         src: "{{ groups['master'][0] }}/certs/{{ item }}"
-        dest: "/etc/etcd/pki"
+        dest: /etc/etcd/pki
+        mode: 0400
       loop:
         - etcd.pem
         - ca.pem
         - etcd-key.pem
 
-    - name: downloading etcd binary
-      unarchive:
+    - name: Get etcd binary
+      ansible.builtin.unarchive:
         src: "{{ etcd_url }}"
-        dest: /usrc/local/bin
-        creates:  # not required. If the specified absolute path (file or directory) already exists, this step will B(not) be run.
+        dest: /usr/local/bin
         exclude:
           - Documentation
           - README*
-        extra_opts: "--strip-components=1"
+        extra_opts: --strip-components=1
         validate_certs: true
-        decrypt: True # not required. This option controls the autodecryption of source files using vault.
+        decrypt: true
         owner: root
         group: root
 
-    - name: create etcd service file
+    - name: Template etcd service file
       ansible.builtin.template:
-        src: "../templates/etcd.service.j2"
+        src: etcd.service.j2
         dest: /etc/systemd/system/etcd.service
+        mode: 0644
 
-    - name: start etcd service
+    - name: Template etcd service
       ansible.builtin.service:
         name: etcd
         state: started
@@ -193,47 +209,50 @@
     calico_ipam_url: https://github.com/projectcalico/cni-plugin/releases/download/v3.14.0/calico-ipam-amd64
 
   tasks:
-    - name: downloading calicoctl binary
+    - name: Get calicoctl binary
       ansible.builtin.get_url:
-        url: "{{calicoctl_url}}"
+        url: "{{ calicoctl_url }}"
         dest: /usr/local/bin/calicoctl
         mode: 700
-    - name: downloading calico plugin
+    - name: Get calico CNI plugin
       ansible.builtin.get_url:
-        url: "{{calico_plugin_url}}"
+        url: "{{ calico_plugin_url }}"
         dest: /opt/cni/bin/calico
         mode: 755
-    - name: downloading calico-ipam plugin
+    - name: Get calico-ipam plugin
       ansible.builtin.get_url:
-        url: "{{calico_ipam_url}}"
+        url: "{{ calico_ipam_url }}"
         dest: /opt/cni/bin/calico-ipam
         mode: 755
 
-    - name: creating cni configuration directory
+    - name: Ensure cni configuration directory
       ansible.builtin.file:
         path: /etc/cni/net.d/
         state: directory
         recurse: true
 
-    - name: creating testnet cni config
+    - name: Template testnet CNI config
       ansible.builtin.template:
-        src: ../templates/testnet.conflist.j2
+        src: testnet.conflist.j2
         dest: /etc/cni/net.d/10-testnet.conflist
+        mode: 0644
 
-    - name: creating calicoctl config directory
+    - name: Template calicoctl config directory
       ansible.builtin.file:
         path: /etc/calico
         state: directory
         recurse: true
+        mode: 0777
 
-    - name: creating calicoctl config
+    - name: Template calicoctl config
       ansible.builtin.template:
-        src: "../templates/calicoctl.cfg.j2"
+        src: calicoctl.cfg.j2
         dest: /etc/calico/calicoctl.cfg
+        mode: 0644
 
-    - name: creating calico container directories
+    - name: Template calico container directories
       ansible.builtin.file:
-        path: "{{item}}"
+        path: "{{ item }}"
         recurse: true
         state: directory
       with_items:
@@ -241,22 +260,25 @@
         - /var/run/calico
         - /var/lib/calico
 
-    - name: creating startup script for calico node
+    - name: Template startup script for calico node
       ansible.builtin.template:
-        src: "../templates/calicoup.sh.j2"
+        src: calicoup.sh.j2
         dest: /usr/local/bin/calicoup.sh
-        mode: 755
-    - name: creating calico.env file
+        mode: 0755
+
+    - name: Ensure calico.env file
       ansible.builtin.file:
         path: /etc/calico/calico.env
         state: touch
+        mode: 0644
 
-    - name: creating calico-node.service
+    - name: Template calico-node.service
       ansible.builtin.template:
-        src: "../templates/calico-node.service.j2"
+        src: calico-node.service.j2
         dest: /etc/systemd/system/calico-node.service
+        mode: 0644
 
-    - name: starting calico-node service
+    - name: Start calico-node service
       ansible.builtin.service:
         name: calico-node
         state: restarted
@@ -270,13 +292,13 @@
 
   tasks:
     - name: Ensure Hashi GPG keys
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://apt.releases.hashicorp.com/gpg
         state: present
 
     - name: Ensure Hashi repo
-      apt_repository:
-        repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
         state: present
         mode: 0644
         update_cache: true
@@ -288,20 +310,20 @@
         name: nomad
         state: present
 
-    - name: creating plugins directory for containerd-driver
+    - name: Ensure plugins directory for containerd-driver
       ansible.builtin.file:
         path: /opt/nomad/data/plugins
         recurse: true
         state: directory
 
-    - name: downloading nomad containerd-driver
+    - name: Ensure nomad containerd-driver
       ansible.builtin.get_url:
         url: "{{ containerd_driver_url }}"
         dest: /opt/nomad/data/plugins/containerd-driver
-        mode: 755
+        mode: 0755
 
     - name: Ensure Nomad containerd config
-      copy:
+      ansible.builtin.copy:
         dest: /etc/nomad.d/containerd.hcl
         content: |
           plugin "containerd-driver" {
@@ -320,17 +342,20 @@
       ansible.builtin.template:
         src: nomad.env.j2
         dest: /etc/nomad.d/nomad.env
+        mode: 0644
 
     - name: Ensure nomad CNI directory
       ansible.builtin.file:
         path: /opt/cni/config
         state: directory
+        mode: 0777
 
     - name: Template cni config for nomad
       ansible.builtin.template:
         src: testnet.nomad.j2
         dest: /opt/cni/config/10-testnet.conflist
-      notify: restart nomad
+        mode: 0644
+      notify: Restart nomad
 
     - name: Ensure nomad service
       ansible.builtin.service:
@@ -340,12 +365,13 @@
 
     - name: Template example jobs
       ansible.builtin.template:
-        src: example.job.j2"
+        src: example.job.j2
         dest: /root/example.nomad
+        mode: 0644
 
   handlers:
-    - name: restart nomad
-      service:
+    - name: Restart nomad
+      ansible.builtin.service:
         name: nomad
         state: restarted
         enabled: true
