@@ -128,3 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 172.16.6.10/
+
+# Editor
+.vscode/
