@@ -31,10 +31,18 @@ We want to create a secure network between two hosts using Wireguard. We want to
 
 We are able to run a Nomad job on one of the hosts and access it from the other host in the same network. We are able to use Calico as a CNI plugin for Nomad.
 
-### where we are stuck?
+### wat we were stuck at?
 
 When we try to access the Nomad job from the other host via the Wireguard tunnel, we are not able to access it. although we are able to ping the host from the other host. containers within the same host are able to access each other. 
 
 For wireguard, we are using netmaker. refer to this [guide](https://github.com/gravitl/netmaker)
 
-I assume that the problem is with the calico configuration. I am not sure how to configure calico to work with vpn interface. 
+### How we fixed it?
+
+We had to enable three things inside calico-node service.
+
+FELIX_VXLANENABLED=true 
+IP_AUTODETECTION_METHOD=interface=nm-netmaker 
+CALICO_MANAGE_CNI=false
+
+This solved the issue and communcation across netmaker started working.
